@@ -27,10 +27,17 @@ gpu_image = (
         "torch-sim-atomistic>=0.5",
         "ase>=3.22",
         "numpy>=1.24",
-        "fairchem-core>=1.0",
+        # FairChem (eSEN + UMA/EquiformerV2)
+        "fairchem-core>=2.2",
+        # NequIP
         "nequip>=0.17",
+        # ORB-v3
         "orb-models>=0.4",
-        "metatensor>=0.6",
+        # PET via metatomic
+        "metatomic",
+        "metatomic-torchsim",
+        "metatomic-ase",
+        "upet",
         "matplotlib>=3.7",
     )
     .env({"CUDA_HOME": "/usr/local/cuda"})
@@ -44,7 +51,7 @@ serve_image = modal.Image.debian_slim(python_version="3.12").pip_install("fastap
     image=gpu_image,
     gpu="A100",
     volumes={"/results": results_vol},
-    secrets=[modal.Secret.from_name("huggingface-secret")],
+    secrets=[modal.Secret.from_name("hf-token")],
     timeout=7200,
     memory=32768,
 )
@@ -52,8 +59,9 @@ def run_benchmarks(
     system_sizes: list[int] | None = None,
     n_steps: int = 100,
     batch_size: int = 16,
-) -> dict:
-    """Run all MLIP benchmarks on A100 GPU."""
+) -> str:
+    """Run all MLIP benchmarks on A100 GPU. Returns JSON string."""
+    import json
     import logging
     import sys
 
@@ -80,14 +88,14 @@ def run_benchmarks(
     )
 
     results_vol.commit()
-    return results
+    return json.dumps(results)
 
 
 @app.function(
     image=serve_image,
     volumes={"/results": results_vol},
 )
-@modal.web_endpoint(method="GET")
+@modal.fastapi_endpoint(method="GET")
 def get_results():
     """Serve benchmark results as JSON API."""
     import json
@@ -106,7 +114,7 @@ def get_results():
     image=serve_image,
     volumes={"/results": results_vol},
 )
-@modal.web_endpoint(method="GET")
+@modal.fastapi_endpoint(method="GET")
 def health():
     """Health check endpoint."""
     return {"status": "ok"}
@@ -119,12 +127,15 @@ def main(
     quick: bool = False,
 ):
     """Run MLIP inference benchmarks on Modal A100."""
+    import json
+
     sizes = [64, 216] if quick else None
-    results = run_benchmarks.remote(
+    results_json = run_benchmarks.remote(
         system_sizes=sizes,
         n_steps=n_steps,
         batch_size=batch_size,
     )
+    results = json.loads(results_json)
 
     n_models = len(results.get("models", []))
     gpu = results.get("metadata", {}).get("gpu_name", "unknown")
@@ -136,7 +147,7 @@ def main(
         else:
             sizes_data = model.get("sizes", {})
             if sizes_data:
-                largest = max(sizes_data.keys(), key=int)
+                largest = max(sizes_data.keys(), key=lambda k: int(k))
                 info = sizes_data[largest]
                 print(
                     f"  {model['model_name']}: "

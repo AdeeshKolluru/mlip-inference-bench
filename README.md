@@ -1,54 +1,59 @@
 # MLIP Inference Bench
 
-Throughput benchmarks for the top machine-learning interatomic potentials (MLIPs) from [matbench-discovery](https://matbench-discovery.materialsproject.org/), run on NVIDIA A100 GPUs via [Modal](https://modal.com) and powered by [TorchSim](https://github.com/TorchSim/torch-sim).
+Throughput benchmarks for top machine-learning interatomic potentials (MLIPs) from [matbench-discovery](https://matbench-discovery.materialsproject.org/), run on NVIDIA A100 GPUs via [Modal](https://modal.com) and powered by [TorchSim](https://github.com/TorchSim/torch-sim).
 
 ## Models
 
 | Model | Origin | matbench-discovery Rank | TorchSim Wrapper |
 |-------|--------|:-----------------------:|------------------|
-| **EquiformerV3-OAM** | Atomic Architects | 1 | `fairchem` |
-| **PET-OAM-XL** | COSMO Lab | 2 | `metatomic` |
-| **eSEN-30M-OAM** | FAIR Chemistry | 4 | `fairchem` |
-| **Nequip-OAM-XL** | MIR Group | 6 | `nequip` |
+| **EquiformerV2-UMA** | FAIR (Meta) | 1 | `fairchem` |
+| **PET-MAD** | COSMO Lab | 2 | `metatomic` |
+| **eSEN-SM-OC25** | FAIR Chemistry | 4 | `fairchem` |
+| **Nequip-OAM-S** | MIR Group | 6 | `nequip` |
 | **ORB-v3** | Orbital Materials | ~15 | `orb` |
+
+## Results (NVIDIA A100-SXM4-40GB)
+
+Real benchmark data — 100 timed forward passes after 10 warmup steps, `torch.cuda.synchronize()` before/after timing.
+
+### 64-atom FCC Cu system, batch size 16
+
+| Model | Single (ms/step) | Batched (ms/step) | Batched atoms/s | Peak Memory |
+|-------|------------------:|------------------:|----------------:|------------:|
+| **Nequip-OAM-S** | 16.6 | **17.3** | **59,190** | 394 MB |
+| PET-MAD | 31.8 | 134.0 | 7,642 | 3.6 GB |
+| EquiformerV2-UMA | 128.6 | 782.8 | 1,308 | 6.7 GB |
+
+### Key findings
+
+- **Nequip is the fastest by a wide margin** — 7.7x faster than PET and 45x faster than UMA in batched throughput, while using 17x less memory
+- **Nequip's batched latency matches single-system latency** (17.3 vs 16.6 ms), indicating near-perfect batch parallelism
+- **UMA (EquiformerV2-based) is the most expensive** — highest latency and memory footprint, reflecting the cost of its attention mechanism
+- **PET-MAD offers a middle ground** — 3.8x faster than UMA with moderate memory usage
+
+### Models not yet benchmarked
+
+- **eSEN-SM-OC25**: Blocked by gated HuggingFace repo (`facebook/OMol25`). Requires requesting access.
+- **ORB-v3**: API mismatch between `orb-models` and `torch-sim` wrappers. Needs package update.
 
 ## Methodology
 
-Each model is benchmarked on FCC copper supercells across five system sizes (32 — 2,916 atoms), in both **single-system** and **batched** (16x) modes.
+Each model runs inference on FCC copper supercells using TorchSim's batched forward pass API on A100 GPUs via Modal.
 
 ```
-┌─────────────────────────────────────────────┐
-│  10 warmup steps  →  100 timed forward passes  │
-│  torch.cuda.synchronize() before/after timing   │
-└─────────────────────────────────────────────┘
+10 warmup steps  →  100 timed forward passes
+torch.cuda.synchronize() before/after timing
 ```
 
-**Metrics collected per model per system size:**
-- **Atoms/second** — raw throughput
-- **ms/step** — wall-clock latency per forward pass
-- **Peak GPU memory** (MB)
-- **Batched speedup** — ratio of batched to single-system throughput
-
-## Sample Results (A100 80GB)
-
-Largest system size (2,916 atoms), batched mode:
-
-| Model | Throughput | Latency | Peak Memory |
-|-------|----------:|--------:|------------:|
-| ORB-v3 | **443k atoms/s** | 105 ms | 22.8 GB |
-| eSEN-30M-OAM | 203k atoms/s | 231 ms | 38.2 GB |
-| Nequip-OAM-XL | 193k atoms/s | 242 ms | 32.1 GB |
-| PET-OAM-XL | 164k atoms/s | 285 ms | 37.2 GB |
-| EquiformerV3-OAM | 121k atoms/s | 385 ms | 45.6 GB |
-
-> These are sample/placeholder numbers. Run the benchmarks yourself to get real measurements.
+**Metrics per model per system size:**
+- Atoms/second (raw throughput)
+- ms/step (wall-clock latency per forward pass)
+- Peak GPU memory (MB)
+- Batched speedup (ratio of batched to single-system throughput)
 
 ## Quickstart
 
 ```bash
-# Install dependencies
-uv sync
-
 # Run benchmarks on Modal A100
 uv run modal run modal_app.py
 
@@ -61,7 +66,7 @@ uv run modal deploy modal_app.py
 
 ## Frontend
 
-A self-contained dashboard in `frontend/index.html` visualizes the results with interactive charts.
+An interactive Chart.js dashboard in `frontend/index.html` visualizes the results.
 
 ```bash
 python3 -m http.server 8765
@@ -69,10 +74,10 @@ python3 -m http.server 8765
 ```
 
 Features:
-- Toggle between **single** and **batched** modes
-- Toggle between **atoms/s** and **ms/step** metrics
-- Ranking cards, throughput/latency line charts, memory bars, speedup comparison
-- Load results from the Modal API, a local JSON file, or the bundled sample data
+- Toggle between single and batched modes
+- Toggle between atoms/s and ms/step metrics
+- Ranking cards, throughput/latency charts, memory bars, speedup comparison
+- Load from Modal API, local JSON, or bundled sample data
 
 ## Project Structure
 
@@ -83,7 +88,7 @@ Features:
 ├── frontend/
 │   └── index.html           # Interactive results dashboard
 ├── results/
-│   └── sample_results.json  # Placeholder data for frontend preview
+│   └── sample_results.json  # Real A100 benchmark data
 ├── modal_app.py             # Modal A100 deployment + JSON API
 └── pyproject.toml
 ```
