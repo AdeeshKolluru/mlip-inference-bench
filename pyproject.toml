@@ -1,0 +1,25 @@
+[project]
+name = "mlip-inference-bench"
+version = "0.1.0"
+description = "Inference benchmarks for top MLIP models using TorchSim on Modal A100s"
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.2",
+    "torch-sim-atomistic>=0.5",
+    "ase>=3.22",
+    "numpy>=1.24",
+    "fairchem-core>=1.0",
+    "nequip>=0.17",
+    "orb-models>=0.4",
+    "metatensor>=0.6",
+    "matplotlib>=3.7",
+]
+
+[dependency-groups]
+dev = [
+    "modal>=1.4",
+    "ruff>=0.4",
+]
+
+[tool.ruff]
+line-length = 100
