@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MLIP Inference Benchmark</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --surface2: #1a1a26;
+      --border: #2a2a3a;
+      --text: #e4e4ef;
+      --text-dim: #8888a0;
+      --accent: #6366f1;
+      --accent2: #8b5cf6;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --cyan: #06b6d4;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .header {
+      padding: 2rem 2rem 1rem;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, #0f0f18 0%, var(--bg) 100%);
+    }
+
+    .header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #e4e4ef 0%, #6366f1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header p {
+      color: var(--text-dim);
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .meta-bar {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .meta-item {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .meta-item strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.5rem 2rem;
+    }
+
+    .controls {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .controls label {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+    }
+
+    .toggle-group {
+      display: inline-flex;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .toggle-group button {
+      padding: 0.5rem 1rem;
+      background: var(--surface);
+      border: none;
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .toggle-group button.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    .toggle-group button:hover:not(.active) {
+      background: var(--surface2);
+    }
+
+    .ranking-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .rank-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .rank-card:hover {
+      border-color: var(--accent);
+    }
+
+    .rank-card.fastest {
+      border-color: var(--green);
+    }
+
+    .rank-badge {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: var(--surface2);
+      color: var(--text-dim);
+    }
+
+    .rank-card.fastest .rank-badge {
+      background: var(--green);
+      color: #000;
+    }
+
+    .rank-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      padding-right: 2rem;
+    }
+
+    .rank-stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.4rem;
+    }
+
+    .rank-stat .label {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .rank-stat .value {
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .rank-stat .value.highlight {
+      color: var(--green);
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 900px) {
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .chart-card h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--text);
+    }
+
+    .chart-container {
+      position: relative;
+      height: 320px;
+    }
+
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      overflow-x: auto;
+    }
+
+    .table-card h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    th {
+      text-align: left;
+      padding: 0.6rem 0.8rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-dim);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 0.6rem 0.8rem;
+      border-bottom: 1px solid var(--border);
+      font-variant-numeric: tabular-nums;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--surface2); }
+
+    .fastest-cell { color: var(--green); font-weight: 600; }
+
+    .load-source {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .load-source input[type="text"] {
+      flex: 1;
+      max-width: 500px;
+      padding: 0.5rem 0.75rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.85rem;
+    }
+
+    .load-source input[type="text"]::placeholder {
+      color: var(--text-dim);
+    }
+
+    .btn {
+      padding: 0.5rem 1rem;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .btn:hover { opacity: 0.85; }
+
+    .btn-secondary {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+    }
+
+    .footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>MLIP Inference Benchmark</h1>
+    <p>Throughput comparison of top matbench-discovery models on NVIDIA A100 using TorchSim</p>
+    <div class="meta-bar" id="meta-bar"></div>
+  </div>
+
+  <div class="container">
+    <div class="load-source">
+      <input type="text" id="api-url" placeholder="Paste Modal API URL or leave blank for sample data">
+      <button class="btn" onclick="loadFromUrl()">Load</button>
+      <button class="btn btn-secondary" onclick="loadSample()">Sample Data</button>
+      <input type="file" id="file-input" accept=".json" style="display:none" onchange="loadFromFile(event)">
+      <button class="btn btn-secondary" onclick="document.getElementById('file-input').click()">Upload JSON</button>
+    </div>
+
+    <div class="controls">
+      <label>Mode:</label>
+      <div class="toggle-group" id="mode-toggle">
+        <button class="active" data-mode="batched" onclick="setMode('batched')">Batched</button>
+        <button data-mode="single" onclick="setMode('single')">Single</button>
+      </div>
+      <label style="margin-left:1rem;">Metric:</label>
+      <div class="toggle-group" id="metric-toggle">
+        <button class="active" data-metric="atoms_per_second" onclick="setMetric('atoms_per_second')">Atoms/s</button>
+        <button data-metric="time_per_step_ms" onclick="setMetric('time_per_step_ms')">ms/step</button>
+      </div>
+    </div>
+
+    <div class="ranking-cards" id="ranking-cards"></div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>Throughput vs System Size</h3>
+        <div class="chart-container"><canvas id="throughput-chart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Latency vs System Size</h3>
+        <div class="chart-container"><canvas id="latency-chart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Peak GPU Memory</h3>
+        <div class="chart-container"><canvas id="memory-chart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Batched Speedup (vs single)</h3>
+        <div class="chart-container"><canvas id="speedup-chart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <h3>Detailed Results</h3>
+      <table id="results-table">
+        <thead><tr id="table-header"></tr></thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer">
+    Models ranked by <a href="https://matbench-discovery.materialsproject.org/">matbench-discovery</a>.
+    Benchmarked with <a href="https://github.com/TorchSim/torch-sim">TorchSim</a> on Modal A100 GPUs.
+  </div>
+
+  <script>
+    const MODEL_COLORS = [
+      '#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#06b6d4',
+      '#ec4899', '#8b5cf6', '#14b8a6',
+    ];
+
+    let data = null;
+    let mode = 'batched';
+    let metric = 'atoms_per_second';
+    let charts = {};
+
+    function setMode(m) {
+      mode = m;
+      document.querySelectorAll('#mode-toggle button').forEach(b =>
+        b.classList.toggle('active', b.dataset.mode === m));
+      render();
+    }
+
+    function setMetric(m) {
+      metric = m;
+      document.querySelectorAll('#metric-toggle button').forEach(b =>
+        b.classList.toggle('active', b.dataset.metric === m));
+      render();
+    }
+
+    function loadSample() {
+      fetch('../results/sample_results.json')
+        .then(r => r.json())
+        .then(d => { data = d; render(); })
+        .catch(() => alert('Could not load sample data. Ensure sample_results.json exists.'));
+    }
+
+    function loadFromUrl() {
+      const url = document.getElementById('api-url').value.trim();
+      if (!url) { loadSample(); return; }
+      fetch(url)
+        .then(r => r.json())
+        .then(d => { data = d; render(); })
+        .catch(e => alert('Failed to load: ' + e.message));
+    }
+
+    function loadFromFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        data = JSON.parse(e.target.result);
+        render();
+      };
+      reader.readAsText(file);
+    }
+
+    function getModelSizes(model) {
+      return Object.keys(model.sizes).map(Number).sort((a, b) => a - b);
+    }
+
+    function render() {
+      if (!data || !data.models) return;
+      renderMeta();
+      renderRankingCards();
+      renderCharts();
+      renderTable();
+    }
+
+    function renderMeta() {
+      const m = data.metadata;
+      document.getElementById('meta-bar').innerHTML = [
+        `<span class="meta-item">GPU: <strong>${m.gpu_name}</strong></span>`,
+        `<span class="meta-item">Steps: <strong>${m.n_steps}</strong></span>`,
+        `<span class="meta-item">Batch: <strong>${m.batch_size}</strong></span>`,
+        `<span class="meta-item">PyTorch: <strong>${m.torch_version}</strong></span>`,
+        `<span class="meta-item">CUDA: <strong>${m.cuda_version}</strong></span>`,
+        `<span class="meta-item">Date: <strong>${m.timestamp?.split('T')[0] || 'N/A'}</strong></span>`,
+      ].join('');
+    }
+
+    function renderRankingCards() {
+      const models = data.models.filter(m => !m.error);
+      // Rank by throughput at largest system size
+      const ranked = models.map(m => {
+        const sizes = getModelSizes(m);
+        const largest = sizes[sizes.length - 1];
+        const throughput = m.sizes[largest][mode].atoms_per_second;
+        const latency = m.sizes[largest][mode].time_per_step_ms;
+        const mem = m.sizes[largest].peak_memory_mb;
+        return { ...m, throughput, latency, mem, largestSize: largest };
+      }).sort((a, b) => b.throughput - a.throughput);
+
+      const container = document.getElementById('ranking-cards');
+      container.innerHTML = ranked.map((m, i) => `
+        <div class="rank-card ${i === 0 ? 'fastest' : ''}">
+          <div class="rank-badge">#${i + 1}</div>
+          <h3>${m.model_name}</h3>
+          <div class="rank-stat">
+            <span class="label">Throughput (${m.largestSize} atoms)</span>
+            <span class="value ${i === 0 ? 'highlight' : ''}">${(m.throughput / 1000).toFixed(1)}k atoms/s</span>
+          </div>
+          <div class="rank-stat">
+            <span class="label">Latency</span>
+            <span class="value">${m.latency.toFixed(1)} ms/step</span>
+          </div>
+          <div class="rank-stat">
+            <span class="label">Peak Memory</span>
+            <span class="value">${(m.mem / 1000).toFixed(1)} GB</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function makeChart(id, config) {
+      if (charts[id]) charts[id].destroy();
+      const ctx = document.getElementById(id).getContext('2d');
+      charts[id] = new Chart(ctx, config);
+    }
+
+    function chartDefaults() {
+      return {
+        color: '#8888a0',
+        borderColor: '#2a2a3a',
+        font: { family: 'Inter, system-ui, sans-serif' },
+      };
+    }
+
+    function renderCharts() {
+      const models = data.models.filter(m => !m.error);
+      const allSizes = [...new Set(models.flatMap(getModelSizes))].sort((a, b) => a - b);
+
+      // Throughput chart
+      makeChart('throughput-chart', {
+        type: 'line',
+        data: {
+          labels: allSizes,
+          datasets: models.map((m, i) => ({
+            label: m.model_name,
+            data: allSizes.map(s => m.sizes[s]?.[mode]?.atoms_per_second || null),
+            borderColor: MODEL_COLORS[i],
+            backgroundColor: MODEL_COLORS[i] + '20',
+            tension: 0.3,
+            pointRadius: 4,
+            borderWidth: 2,
+          })),
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { title: { display: true, text: 'System Size (atoms)', color: '#8888a0' }, ticks: { color: '#8888a0' }, grid: { color: '#1a1a26' } },
+            y: { title: { display: true, text: 'Atoms / second', color: '#8888a0' }, ticks: { color: '#8888a0', callback: v => (v / 1000).toFixed(0) + 'k' }, grid: { color: '#1a1a26' } },
+          },
+          plugins: { legend: { labels: { color: '#e4e4ef', usePointStyle: true, pointStyle: 'circle' } } },
+        },
+      });
+
+      // Latency chart
+      makeChart('latency-chart', {
+        type: 'line',
+        data: {
+          labels: allSizes,
+          datasets: models.map((m, i) => ({
+            label: m.model_name,
+            data: allSizes.map(s => m.sizes[s]?.[mode]?.time_per_step_ms || null),
+            borderColor: MODEL_COLORS[i],
+            tension: 0.3,
+            pointRadius: 4,
+            borderWidth: 2,
+          })),
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { title: { display: true, text: 'System Size (atoms)', color: '#8888a0' }, ticks: { color: '#8888a0' }, grid: { color: '#1a1a26' } },
+            y: { title: { display: true, text: 'ms / step', color: '#8888a0' }, ticks: { color: '#8888a0' }, grid: { color: '#1a1a26' } },
+          },
+          plugins: { legend: { labels: { color: '#e4e4ef', usePointStyle: true, pointStyle: 'circle' } } },
+        },
+      });
+
+      // Memory chart
+      makeChart('memory-chart', {
+        type: 'bar',
+        data: {
+          labels: models.map(m => m.model_name),
+          datasets: allSizes.map((s, si) => ({
+            label: `${s} atoms`,
+            data: models.map(m => m.sizes[s]?.peak_memory_mb ? m.sizes[s].peak_memory_mb / 1000 : null),
+            backgroundColor: MODEL_COLORS[si] + 'aa',
+            borderColor: MODEL_COLORS[si],
+            borderWidth: 1,
+          })),
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { ticks: { color: '#8888a0' }, grid: { color: '#1a1a26' } },
+            y: { title: { display: true, text: 'Peak Memory (GB)', color: '#8888a0' }, ticks: { color: '#8888a0' }, grid: { color: '#1a1a26' } },
+          },
+          plugins: { legend: { labels: { color: '#e4e4ef', usePointStyle: true, pointStyle: 'rect' } } },
+        },
+      });
+
+      // Speedup chart (batched / single)
+      makeChart('speedup-chart', {
+        type: 'bar',
+        data: {
+          labels: models.map(m => m.model_name),
+          datasets: allSizes.map((s, si) => {
+            return {
+              label: `${s} atoms`,
+              data: models.map(m => {
+                if (!m.sizes[s]) return null;
+                const single = m.sizes[s].single.atoms_per_second;
+                const batched = m.sizes[s].batched.atoms_per_second;
+                return single > 0 ? (batched / single).toFixed(1) : null;
+              }),
+              backgroundColor: MODEL_COLORS[si] + 'aa',
+              borderColor: MODEL_COLORS[si],
+              borderWidth: 1,
+            };
+          }),
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { ticks: { color: '#8888a0' }, grid: { color: '#1a1a26' } },
+            y: { title: { display: true, text: 'Speedup (batched / single)', color: '#8888a0' }, ticks: { color: '#8888a0' }, grid: { color: '#1a1a26' } },
+          },
+          plugins: { legend: { labels: { color: '#e4e4ef', usePointStyle: true, pointStyle: 'rect' } } },
+        },
+      });
+    }
+
+    function renderTable() {
+      const models = data.models.filter(m => !m.error);
+      const allSizes = [...new Set(models.flatMap(getModelSizes))].sort((a, b) => a - b);
+
+      // Header
+      const header = document.getElementById('table-header');
+      header.innerHTML = `<th>Model</th>` +
+        allSizes.map(s => `<th>${s} atoms<br><span style="font-weight:400;color:var(--text-dim);font-size:0.75rem">${mode === 'batched' ? 'batched' : 'single'}</span></th>`).join('') +
+        `<th>Peak Mem (GB)</th>`;
+
+      // Find fastest per size
+      const fastest = {};
+      allSizes.forEach(s => {
+        let best = 0;
+        models.forEach(m => {
+          const v = m.sizes[s]?.[mode]?.atoms_per_second || 0;
+          if (v > best) best = v;
+        });
+        fastest[s] = best;
+      });
+
+      const body = document.getElementById('table-body');
+      body.innerHTML = models.map(m => {
+        const sizes = getModelSizes(m);
+        const maxMem = Math.max(...sizes.map(s => m.sizes[s]?.peak_memory_mb || 0));
+        return `<tr>
+          <td><strong>${m.model_name}</strong></td>
+          ${allSizes.map(s => {
+            const val = m.sizes[s]?.[mode]?.atoms_per_second;
+            if (val == null) return '<td>-</td>';
+            const isFastest = val === fastest[s];
+            return `<td class="${isFastest ? 'fastest-cell' : ''}">${(val / 1000).toFixed(1)}k atoms/s</td>`;
+          }).join('')}
+          <td>${(maxMem / 1000).toFixed(1)}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // Load sample data on page load
+    loadSample();
+  </script>
+</body>
+</html>
