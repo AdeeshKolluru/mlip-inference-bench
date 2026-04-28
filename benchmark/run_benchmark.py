@@ -46,8 +46,10 @@ def _load_model(model_key: str, device: torch.device):
 
     elif model_key == "pet":
         from torch_sim.models.metatomic import MetatomicModel
+        from upet import get_upet
 
-        return MetatomicModel(model="pet-mad", device=device)
+        pet_model = get_upet(model="pet-mad")
+        return MetatomicModel(model=pet_model, device=device)
 
     elif model_key == "nequip":
         import tempfile
@@ -85,8 +87,11 @@ def _load_model(model_key: str, device: torch.device):
         from orb_models.forcefield import pretrained
         from torch_sim.models.orb import OrbModel
 
-        orb_ff = pretrained.orb_v3(device=device)
-        return OrbModel(orb_ff, device=device)
+        orb_ff, atoms_adapter = pretrained.orb_v3_conservative_inf_omat(
+            device=device,
+            precision="float32-high",
+        )
+        return OrbModel(orb_ff, atoms_adapter, device=device)
 
     else:
         raise ValueError(f"Unknown model key: {model_key}")

@@ -10,7 +10,7 @@ dependencies = [
     "numpy>=1.24",
     "fairchem-core>=1.0",
     "nequip>=0.17",
-    "orb-models>=0.4",
+    "orb-models>=0.6.2",
     "metatensor>=0.6",
     "matplotlib>=3.7",
 ]
