@@ -12,29 +12,30 @@ Throughput benchmarks for top machine-learning interatomic potentials (MLIPs) fr
 | **Nequip-OAM-S** | MIR Group | 6 | `nequip` |
 | **ORB-v3** | Orbital Materials | ~15 | `orb` |
 
-## Results (NVIDIA A100-SXM4-40GB)
+## Results (NVIDIA A100 80GB PCIe)
 
-Real benchmark data — 100 timed forward passes after 10 warmup steps, `torch.cuda.synchronize()` before/after timing.
+Real benchmark data — 100 timed forward passes after 10 warmup steps, `torch.cuda.synchronize()` for accurate GPU timing. PyTorch 2.8.0, CUDA 12.4.
 
 ### 64-atom FCC Cu system, batch size 16
 
 | Model | Single (ms/step) | Batched (ms/step) | Batched atoms/s | Peak Memory |
 |-------|------------------:|------------------:|----------------:|------------:|
-| **Nequip-OAM-S** | 16.6 | **17.3** | **59,190** | 394 MB |
-| PET-MAD | 31.8 | 134.0 | 7,642 | 3.6 GB |
-| EquiformerV2-UMA | 128.6 | 782.8 | 1,308 | 6.7 GB |
+| **Nequip-OAM-S** | 15.1 | **15.5** | **66,065** | 397 MB |
+| ORB-v3 | 21.2 | 74.7 | 13,708 | 5.2 GB |
+| PET-MAD | 30.3 | 109.2 | 9,378 | 1.6 GB |
+| EquiformerV2-UMA | 80.4 | 701.9 | 1,459 | 6.7 GB |
 
 ### Key findings
 
-- **Nequip is the fastest by a wide margin** — 7.7x faster than PET and 45x faster than UMA in batched throughput, while using 17x less memory
-- **Nequip's batched latency matches single-system latency** (17.3 vs 16.6 ms), indicating near-perfect batch parallelism
-- **UMA (EquiformerV2-based) is the most expensive** — highest latency and memory footprint, reflecting the cost of its attention mechanism
-- **PET-MAD offers a middle ground** — 3.8x faster than UMA with moderate memory usage
+- **Nequip is the fastest by a wide margin** — 4.8x faster than ORB-v3 and 45x faster than UMA in batched throughput, while using 17x less memory than UMA
+- **Nequip achieves near-perfect batch parallelism** — batched latency (15.5 ms) barely exceeds single-system latency (15.1 ms), meaning the GPU is efficiently utilized
+- **ORB-v3 is the second fastest** — strong single-system performance (21.2 ms) with good batched scaling
+- **PET-MAD offers a middle ground** — 2.7x faster than UMA with moderate memory usage (1.6 GB)
+- **UMA (EquiformerV2-based) is the most expensive** — highest latency and memory footprint, reflecting the cost of the full attention mechanism
 
-### Models not yet benchmarked
+### eSEN status
 
-- **eSEN-SM-OC25**: Blocked by gated HuggingFace repo (`facebook/OMol25`). Requires requesting access.
-- **ORB-v3**: API mismatch between `orb-models` and `torch-sim` wrappers. Needs package update.
+eSEN-SM-OC25 is blocked by a gated HuggingFace repo (`facebook/OC25`). Request access at [huggingface.co/facebook/OC25](https://huggingface.co/facebook/OC25) to benchmark it.
 
 ## Methodology
 
@@ -72,12 +73,6 @@ An interactive Chart.js dashboard in `frontend/index.html` visualizes the result
 python3 -m http.server 8765
 # open http://localhost:8765/frontend/
 ```
-
-Features:
-- Toggle between single and batched modes
-- Toggle between atoms/s and ms/step metrics
-- Ranking cards, throughput/latency charts, memory bars, speedup comparison
-- Load from Modal API, local JSON, or bundled sample data
 
 ## Project Structure
 

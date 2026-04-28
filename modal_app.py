@@ -31,8 +31,8 @@ gpu_image = (
         "fairchem-core>=2.2",
         # NequIP
         "nequip>=0.17",
-        # ORB-v3
-        "orb-models>=0.4",
+        # ORB-v3 (>=0.6.2 required for v3 API)
+        "orb-models>=0.6.2",
         # PET via metatomic
         "metatomic",
         "metatomic-torchsim",
