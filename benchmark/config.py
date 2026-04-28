@@ -47,9 +47,15 @@ MODELS: list[ModelSpec] = [
         matbench_rank=6,
     ),
     ModelSpec(
-        name="ORB-v3",
-        torchsim_key="orb",
-        description="Orbital Materials ORB v3 universal potential",
+        name="ORB-v3-Conservative",
+        torchsim_key="orb_conservative",
+        description="Orbital Materials ORB v3 conservative potential (inf neighbors, OMAT)",
+        matbench_rank=15,
+    ),
+    ModelSpec(
+        name="ORB-v3-Direct",
+        torchsim_key="orb_direct",
+        description="Orbital Materials ORB v3 direct potential (inf neighbors, OMAT)",
         matbench_rank=15,
     ),
 ]

@@ -10,9 +10,10 @@ Throughput benchmarks for top machine-learning interatomic potentials (MLIPs) fr
 | **PET-MAD** | COSMO Lab | 2 | `metatomic` |
 | **eSEN-SM-OC25** | FAIR Chemistry | 4 | `fairchem` |
 | **Nequip-OAM-S** | MIR Group | 6 | `nequip` |
-| **ORB-v3** | Orbital Materials | ~15 | `orb` |
+| **ORB-v3-Conservative** | Orbital Materials | ~15 | `orb` |
+| **ORB-v3-Direct** | Orbital Materials | ~15 | `orb` |
 
-## Results (NVIDIA A100 80GB PCIe)
+## Results (NVIDIA A100-SXM4-40GB)
 
 Real benchmark data — 100 timed forward passes after 10 warmup steps, `torch.cuda.synchronize()` for accurate GPU timing. PyTorch 2.8.0, CUDA 12.4.
 
@@ -20,17 +21,19 @@ Real benchmark data — 100 timed forward passes after 10 warmup steps, `torch.c
 
 | Model | Single (ms/step) | Batched (ms/step) | Batched atoms/s | Peak Memory |
 |-------|------------------:|------------------:|----------------:|------------:|
-| **Nequip-OAM-S** | 15.1 | **15.5** | **66,065** | 397 MB |
-| ORB-v3 | 21.2 | 74.7 | 13,708 | 5.2 GB |
-| PET-MAD | 30.3 | 109.2 | 9,378 | 1.6 GB |
-| EquiformerV2-UMA | 80.4 | 701.9 | 1,459 | 6.7 GB |
+| **Nequip-OAM-S** | 11.7 | **11.5** | **89,043** | 397 MB |
+| ORB-v3-Direct | 10.7 | 36.4 | 28,132 | 1.2 GB |
+| ORB-v3-Conservative | 18.2 | 72.5 | 14,124 | 5.2 GB |
+| PET-MAD | 26.9 | 105.0 | 9,752 | 1.6 GB |
+| EquiformerV2-UMA | 71.8 | 751.6 | 1,362 | 6.7 GB |
 
 ### Key findings
 
-- **Nequip is the fastest by a wide margin** — 4.8x faster than ORB-v3 and 45x faster than UMA in batched throughput, while using 17x less memory than UMA
-- **Nequip achieves near-perfect batch parallelism** — batched latency (15.5 ms) barely exceeds single-system latency (15.1 ms), meaning the GPU is efficiently utilized
-- **ORB-v3 is the second fastest** — strong single-system performance (21.2 ms) with good batched scaling
-- **PET-MAD offers a middle ground** — 2.7x faster than UMA with moderate memory usage (1.6 GB)
+- **Nequip is the fastest in batched throughput** — 89k atoms/s, 3.2x faster than ORB-v3-Direct and 65x faster than UMA, while using only 397 MB
+- **Nequip achieves near-perfect batch parallelism** — batched latency (11.5 ms) actually *lower* than single-system (11.7 ms), meaning the GPU is maximally utilized
+- **ORB-v3-Direct is fastest in single-system latency** (10.7 ms) and 2x faster than ORB-v3-Conservative in batched mode, with 4.3x less memory (1.2 GB vs 5.2 GB)
+- **ORB-v3-Conservative trades speed for energy conservation** — useful for long MD trajectories where energy drift matters
+- **PET-MAD offers a middle ground** — 7x faster than UMA with moderate memory usage (1.6 GB)
 - **UMA (EquiformerV2-based) is the most expensive** — highest latency and memory footprint, reflecting the cost of the full attention mechanism
 
 ### eSEN status

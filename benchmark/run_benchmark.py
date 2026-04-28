@@ -83,11 +83,21 @@ def _load_model(model_key: str, device: torch.device):
             chemical_species_to_atom_type_map=True,
         )
 
-    elif model_key == "orb":
+    elif model_key == "orb_conservative":
         from orb_models.forcefield import pretrained
         from torch_sim.models.orb import OrbModel
 
         orb_ff, atoms_adapter = pretrained.orb_v3_conservative_inf_omat(
+            device=device,
+            precision="float32-high",
+        )
+        return OrbModel(orb_ff, atoms_adapter, device=device)
+
+    elif model_key == "orb_direct":
+        from orb_models.forcefield import pretrained
+        from torch_sim.models.orb import OrbModel
+
+        orb_ff, atoms_adapter = pretrained.orb_v3_direct_inf_omat(
             device=device,
             precision="float32-high",
         )
