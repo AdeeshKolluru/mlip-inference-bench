@@ -110,18 +110,55 @@ Sorted by batched throughput (highest first). CPS from [matbench-discovery](http
 
 Each model runs forward passes on a 64-atom FCC copper supercell using [TorchSim](https://github.com/TorchSim/torch-sim)'s batched API on A100 GPUs via [Modal](https://modal.com). 10 warmup steps are excluded, then 100 steps are timed with `torch.cuda.synchronize()` before and after. Batch size is 16 independent copies of the same system.
 
-## Quickstart
+## Setup
+
+### 1. Install dependencies
 
 ```bash
-# Run benchmarks on Modal A100
+uv sync
+```
+
+### 2. Configure Modal
+
+Create a [Modal](https://modal.com) account, then authenticate:
+
+```bash
+uv run modal setup
+```
+
+This opens a browser to link your Modal account and writes credentials to `~/.modal.toml`.
+
+### 3. Create a HuggingFace secret
+
+Some models download checkpoints from HuggingFace. Create a Modal secret with your HF token:
+
+```bash
+modal secret create hf-token HF_TOKEN=hf_your_token_here
+```
+
+You can get a token at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
+
+### 4. Run benchmarks
+
+```bash
+# Full benchmark (all models, all system sizes)
 uv run modal run modal_app.py
 
-# Quick test (small systems only)
+# Quick test (small systems only, ~15 min)
 uv run modal run modal_app.py --quick
 
-# Deploy API endpoint
+# Run detached (survives terminal disconnect)
+uv run modal run --detach modal_app.py
+
+# Deploy as a persistent API endpoint
 uv run modal deploy modal_app.py
 ```
+
+Results are saved to a Modal volume (`mlip-bench-results`) and printed to stdout. The `--quick` flag benchmarks only 27-atom and 64-atom systems.
+
+### GPU selection
+
+The default GPU is `A100`. To change it, edit the `gpu="A100"` parameter in `modal_app.py`. Modal supports `T4`, `A10G`, `A100`, `H100`, and others.
 
 ## Project Structure
 
