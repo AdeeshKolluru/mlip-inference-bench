@@ -120,14 +120,60 @@ def health():
     return {"status": "ok"}
 
 
+@app.function(
+    image=gpu_image,
+    gpu="A100",
+    volumes={"/results": results_vol},
+    secrets=[modal.Secret.from_name("hf-token")],
+    timeout=7200,
+    memory=32768,
+)
+def run_profiles() -> str:
+    """Profile inference bottlenecks for each model class."""
+    import logging
+    import sys
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        stream=sys.stdout,
+    )
+
+    sys.path.insert(0, "/root")
+    from benchmark.profile_models import run_all_profiles
+
+    results = run_all_profiles(output_path="/results/profile_results.json")
+    results_vol.commit()
+
+    import json
+    return json.dumps(results)
+
+
 @app.local_entrypoint()
 def main(
     n_steps: int = 100,
     batch_size: int = 16,
     quick: bool = False,
+    profile: bool = False,
 ):
     """Run MLIP inference benchmarks on Modal A100."""
     import json
+
+    if profile:
+        results_json = run_profiles.remote()
+        results = json.loads(results_json)
+        for p in results.get("profiles", []):
+            if "error" in p:
+                print(f"\n{p['model_name']}: FAILED — {p['error']}")
+            else:
+                print(f"\n{'='*60}")
+                print(f"  {p['model_name']} ({p['n_atoms']} atoms, {p['n_steps_profiled']} steps)")
+                print(f"  Total CUDA time: {p['total_cuda_time_ms']:.1f} ms")
+                print(f"{'='*60}")
+                for op in p["top_operations"]:
+                    bar = "#" * int(op["pct"] / 2)
+                    print(f"  {op['pct']:5.1f}% {bar:<25s} {op['name']} ({op['calls']} calls, {op['cuda_time_ms']:.1f} ms)")
+        return
 
     sizes = [64, 216] if quick else None
     results_json = run_benchmarks.remote(
