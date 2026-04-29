@@ -2,7 +2,7 @@
 
 Throughput benchmarks for top machine-learning interatomic potentials (MLIPs) from [matbench-discovery](https://matbench-discovery.materialsproject.org/), run on NVIDIA A100 GPUs via [Modal](https://modal.com) and powered by [TorchSim](https://github.com/TorchSim/torch-sim).
 
-**Interactive dashboard: [adeeshkolluru.com/benchmarks](https://adeeshkolluru.com/benchmarks/)**
+**Interactive dashboard: [adeeshkolluru.com/benchmarks/mlip-inference](https://adeeshkolluru.com/benchmarks/mlip-inference/)**
 
 ## Results (NVIDIA A100-SXM4-40GB)
 
