@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "timestamp": "2026-04-28T16:47:31Z",
+    "timestamp": "2026-04-29T16:02:35Z",
     "device": "cuda",
     "gpu_name": "NVIDIA A100-SXM4-40GB",
     "n_steps": 100,
@@ -11,109 +11,83 @@
   },
   "models": [
     {
-      "model_name": "EquiformerV2-UMA",
-      "model_key": "fairchem_eqv2",
+      "model_name": "NequIP-OAM-XL",
+      "model_key": "nequip_xl",
+      "matbench_cps": 0.886,
       "device": "cuda",
       "gpu_name": "NVIDIA A100-SXM4-40GB",
       "sizes": {
-        "27": {
-          "target_atoms": 64, "actual_atoms": 27,
-          "single": {"time_per_step_ms": 71.9, "atoms_per_second": 376},
-          "batched": {"batch_size": 16, "time_per_step_ms": 370.2, "atoms_per_second": 1167},
-          "peak_memory_mb": 3214.0
-        },
-        "64": {
-          "target_atoms": 216, "actual_atoms": 64,
-          "single": {"time_per_step_ms": 71.8, "atoms_per_second": 892},
-          "batched": {"batch_size": 16, "time_per_step_ms": 751.6, "atoms_per_second": 1362},
-          "peak_memory_mb": 6683.0
-        }
+        "27": {"actual_atoms": 27, "single": {"time_per_step_ms": 175.4, "atoms_per_second": 154}, "batched": {"batch_size": 16, "time_per_step_ms": 839.3, "atoms_per_second": 515}, "peak_memory_mb": 14796.0},
+        "64": {"actual_atoms": 64, "single": {"time_per_step_ms": 181.0, "atoms_per_second": 354}, "batched": {"batch_size": 16, "time_per_step_ms": 1911.5, "atoms_per_second": 536}, "peak_memory_mb": 34534.0}
       }
     },
     {
-      "model_name": "PET-MAD",
-      "model_key": "pet",
+      "model_name": "PET-OAM-XL",
+      "model_key": "pet_xl",
+      "matbench_cps": 0.898,
       "device": "cuda",
       "gpu_name": "NVIDIA A100-SXM4-40GB",
       "sizes": {
-        "27": {
-          "target_atoms": 64, "actual_atoms": 27,
-          "single": {"time_per_step_ms": 27.6, "atoms_per_second": 978},
-          "batched": {"batch_size": 16, "time_per_step_ms": 81.8, "atoms_per_second": 5281},
-          "peak_memory_mb": 762.0
-        },
-        "64": {
-          "target_atoms": 216, "actual_atoms": 64,
-          "single": {"time_per_step_ms": 26.9, "atoms_per_second": 2379},
-          "batched": {"batch_size": 16, "time_per_step_ms": 105.0, "atoms_per_second": 9752},
-          "peak_memory_mb": 1629.0
-        }
+        "27": {"actual_atoms": 27, "single": {"time_per_step_ms": 98.3, "atoms_per_second": 275}, "batched": {"batch_size": 16, "time_per_step_ms": 689.9, "atoms_per_second": 626}, "peak_memory_mb": 14335.0},
+        "64": {"actual_atoms": 64, "single": {"time_per_step_ms": 143.6, "atoms_per_second": 446}, "batched": {"batch_size": 16, "time_per_step_ms": 1333.2, "atoms_per_second": 768}, "peak_memory_mb": 29744.0}
       }
     },
     {
-      "model_name": "eSEN-SM-OC25",
-      "model_key": "fairchem_esen",
-      "error": "403 Client Error — gated HuggingFace repo (facebook/OC25). Request access at huggingface.co/facebook/OC25"
-    },
-    {
-      "model_name": "Nequip-OAM-S",
+      "model_name": "NequIP-OAM-S",
       "model_key": "nequip",
       "device": "cuda",
       "gpu_name": "NVIDIA A100-SXM4-40GB",
       "sizes": {
-        "27": {
-          "target_atoms": 64, "actual_atoms": 27,
-          "single": {"time_per_step_ms": 11.6, "atoms_per_second": 2328},
-          "batched": {"batch_size": 16, "time_per_step_ms": 11.3, "atoms_per_second": 38230},
-          "peak_memory_mb": 185.0
-        },
-        "64": {
-          "target_atoms": 216, "actual_atoms": 64,
-          "single": {"time_per_step_ms": 11.7, "atoms_per_second": 5470},
-          "batched": {"batch_size": 16, "time_per_step_ms": 11.5, "atoms_per_second": 89043},
-          "peak_memory_mb": 397.0
-        }
+        "27": {"actual_atoms": 27, "single": {"time_per_step_ms": 33.7, "atoms_per_second": 801}, "batched": {"batch_size": 16, "time_per_step_ms": 28.6, "atoms_per_second": 15105}, "peak_memory_mb": 3083.0},
+        "64": {"actual_atoms": 64, "single": {"time_per_step_ms": 29.3, "atoms_per_second": 2184}, "batched": {"batch_size": 16, "time_per_step_ms": 29.9, "atoms_per_second": 34247}, "peak_memory_mb": 531.0}
+      }
+    },
+    {
+      "model_name": "PET-MAD-S",
+      "model_key": "pet",
+      "device": "cuda",
+      "gpu_name": "NVIDIA A100-SXM4-40GB",
+      "sizes": {
+        "27": {"actual_atoms": 27, "single": {"time_per_step_ms": 53.5, "atoms_per_second": 505}, "batched": {"batch_size": 16, "time_per_step_ms": 126.7, "atoms_per_second": 3410}, "peak_memory_mb": 901.0},
+        "64": {"actual_atoms": 64, "single": {"time_per_step_ms": 49.7, "atoms_per_second": 1287}, "batched": {"batch_size": 16, "time_per_step_ms": 142.6, "atoms_per_second": 7180}, "peak_memory_mb": 1762.0}
       }
     },
     {
       "model_name": "ORB-v3-Conservative",
       "model_key": "orb_conservative",
+      "matbench_cps": 0.860,
       "device": "cuda",
       "gpu_name": "NVIDIA A100-SXM4-40GB",
       "sizes": {
-        "27": {
-          "target_atoms": 64, "actual_atoms": 27,
-          "single": {"time_per_step_ms": 16.6, "atoms_per_second": 1627},
-          "batched": {"batch_size": 16, "time_per_step_ms": 38.8, "atoms_per_second": 11134},
-          "peak_memory_mb": 2259.0
-        },
-        "64": {
-          "target_atoms": 216, "actual_atoms": 64,
-          "single": {"time_per_step_ms": 18.2, "atoms_per_second": 3516},
-          "batched": {"batch_size": 16, "time_per_step_ms": 72.5, "atoms_per_second": 14124},
-          "peak_memory_mb": 5181.0
-        }
+        "27": {"actual_atoms": 27, "single": {"time_per_step_ms": 29.1, "atoms_per_second": 928}, "batched": {"batch_size": 16, "time_per_step_ms": 49.9, "atoms_per_second": 8657}, "peak_memory_mb": 2257.0},
+        "64": {"actual_atoms": 64, "single": {"time_per_step_ms": 29.6, "atoms_per_second": 2162}, "batched": {"batch_size": 16, "time_per_step_ms": 84.5, "atoms_per_second": 12118}, "peak_memory_mb": 5181.0}
       }
     },
     {
       "model_name": "ORB-v3-Direct",
       "model_key": "orb_direct",
+      "matbench_cps": 0.860,
       "device": "cuda",
       "gpu_name": "NVIDIA A100-SXM4-40GB",
       "sizes": {
-        "27": {
-          "target_atoms": 64, "actual_atoms": 27,
-          "single": {"time_per_step_ms": 10.4, "atoms_per_second": 2596},
-          "batched": {"batch_size": 16, "time_per_step_ms": 20.8, "atoms_per_second": 20769},
-          "peak_memory_mb": 579.0
-        },
-        "64": {
-          "target_atoms": 216, "actual_atoms": 64,
-          "single": {"time_per_step_ms": 10.7, "atoms_per_second": 5981},
-          "batched": {"batch_size": 16, "time_per_step_ms": 36.4, "atoms_per_second": 28132},
-          "peak_memory_mb": 1204.0
-        }
+        "27": {"actual_atoms": 27, "single": {"time_per_step_ms": 16.0, "atoms_per_second": 1688}, "batched": {"batch_size": 16, "time_per_step_ms": 27.1, "atoms_per_second": 15946}, "peak_memory_mb": 577.0},
+        "64": {"actual_atoms": 64, "single": {"time_per_step_ms": 16.8, "atoms_per_second": 3810}, "batched": {"batch_size": 16, "time_per_step_ms": 42.7, "atoms_per_second": 23974}, "peak_memory_mb": 1203.0}
       }
+    },
+    {
+      "model_name": "UMA-S-1p1",
+      "model_key": "fairchem_eqv2",
+      "device": "cuda",
+      "gpu_name": "NVIDIA A100-SXM4-40GB",
+      "sizes": {
+        "27": {"actual_atoms": 27, "single": {"time_per_step_ms": 125.9, "atoms_per_second": 214}, "batched": {"batch_size": 16, "time_per_step_ms": 431.7, "atoms_per_second": 1001}, "peak_memory_mb": 3314.0},
+        "64": {"actual_atoms": 64, "single": {"time_per_step_ms": 135.0, "atoms_per_second": 474}, "batched": {"batch_size": 16, "time_per_step_ms": 607.5, "atoms_per_second": 1686}, "peak_memory_mb": 6682.0}
+      }
+    },
+    {
+      "model_name": "eSEN-SM-OC25",
+      "model_key": "fairchem_esen",
+      "error": "403 Client Error — gated HuggingFace repo (facebook/OC25)"
     }
   ]
 }

@@ -51,6 +51,43 @@ def _load_model(model_key: str, device: torch.device):
         pet_model = get_upet(model="pet-mad")
         return MetatomicModel(model=pet_model, device=device)
 
+    elif model_key == "pet_xl":
+        from torch_sim.models.metatomic import MetatomicModel
+        from upet import get_upet
+
+        pet_model = get_upet(model="pet-oam", size="xl")
+        return MetatomicModel(model=pet_model, device=device)
+
+    elif model_key == "nequip_xl":
+        import tempfile
+        import urllib.request
+
+        from nequip.scripts.compile import main as nequip_compile
+        from torch_sim.models.nequip_framework import NequIPFrameworkModel
+
+        zip_url = "https://zenodo.org/records/18775904/files/NequIP-OAM-XL-0.1.nequip.zip?download=1"
+        tmp = tempfile.mkdtemp()
+        zip_path = f"{tmp}/nequip-oam-xl.nequip.zip"
+        compiled_path = f"{tmp}/nequip-oam-xl.nequip.pth"
+
+        logger.info("  Downloading NequIP-OAM-XL checkpoint...")
+        urllib.request.urlretrieve(zip_url, zip_path)
+
+        logger.info("  Compiling NequIP-OAM-XL model for batch mode...")
+        device_str = "cuda" if device.type == "cuda" else "cpu"
+        nequip_compile(args=[
+            zip_path, compiled_path,
+            "--mode", "torchscript",
+            "--device", device_str,
+            "--target", "batch",
+        ])
+
+        return NequIPFrameworkModel.from_compiled_model(
+            compiled_path,
+            device=device,
+            chemical_species_to_atom_type_map=True,
+        )
+
     elif model_key == "nequip":
         import tempfile
 
