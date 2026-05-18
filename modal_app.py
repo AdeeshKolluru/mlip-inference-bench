@@ -66,6 +66,28 @@ eqv3_image = (
     .add_local_dir("benchmark", "/root/benchmark")
 )
 
+ase_image = (
+    modal.Image.from_registry("nvidia/cuda:12.8.1-devel-ubuntu22.04", add_python="3.12")
+    .apt_install("git")
+    .pip_install(
+        "torch==2.7.1", "torchvision==0.22.1", "torchaudio==2.7.1",
+        extra_index_url="https://download.pytorch.org/whl/cu128",
+    )
+    .pip_install(
+        "pyg_lib", "torch_scatter", "torch_sparse", "torch_cluster", "torch_spline_conv",
+        find_links="https://data.pyg.org/whl/torch-2.7.0+cu128.html",
+    )
+    .pip_install(
+        "torch_geometric",
+        "fairchem-core",
+        "orb-models>=0.6.2",
+        "ase>=3.22",
+        "numpy>=1.24",
+    )
+    .env({"CUDA_HOME": "/usr/local/cuda"})
+    .add_local_dir("benchmark", "/root/benchmark")
+)
+
 serve_image = modal.Image.debian_slim(python_version="3.12").pip_install("fastapi[standard]")
 
 
@@ -241,7 +263,7 @@ def run_cuda_graph_test() -> str:
 
 
 @app.function(
-    image=gpu_image,
+    image=ase_image,
     gpu="A100",
     volumes={"/results": results_vol},
     secrets=[modal.Secret.from_name("hf-token")],
@@ -264,6 +286,34 @@ def run_orb_ase_benchmark() -> str:
     from benchmark.bench_orb_ase import run_orb_ase_benchmark
 
     results = run_orb_ase_benchmark(output_path="/results/orb_ase_results.json")
+    results_vol.commit()
+    return json.dumps(results)
+
+
+@app.function(
+    image=ase_image,
+    gpu="A100",
+    volumes={"/results": results_vol},
+    secrets=[modal.Secret.from_name("hf-token")],
+    timeout=7200,
+    memory=32768,
+)
+def run_allscaip_ase_benchmark() -> str:
+    """Benchmark AllScAIP via FAIRChemCalculator on A100."""
+    import json
+    import logging
+    import sys
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        stream=sys.stdout,
+    )
+
+    sys.path.insert(0, "/root")
+    from benchmark.bench_allscaip_ase import run_allscaip_ase_benchmark
+
+    results = run_allscaip_ase_benchmark(output_path="/results/allscaip_ase_results.json")
     results_vol.commit()
     return json.dumps(results)
 
@@ -292,6 +342,14 @@ def main(
         results_json = run_orb_ase_benchmark.remote()
         results = json.loads(results_json)
         print(f"\nORB-v3-Direct (ASE) — {results.get('metadata', {}).get('gpu_name', 'unknown')}")
+        for sz, info in results.get("sizes", {}).items():
+            print(f"  {sz} atoms: {info['single']['time_per_step_ms']:.1f}ms/step, {info['single']['atoms_per_second']} atoms/s, {info['peak_memory_mb']:.0f}MB")
+        return
+
+    if model == "allscaip_ase":
+        results_json = run_allscaip_ase_benchmark.remote()
+        results = json.loads(results_json)
+        print(f"\nAllScAIP (ASE) — {results.get('metadata', {}).get('gpu_name', 'unknown')}")
         for sz, info in results.get("sizes", {}).items():
             print(f"  {sz} atoms: {info['single']['time_per_step_ms']:.1f}ms/step, {info['single']['atoms_per_second']} atoms/s, {info['peak_memory_mb']:.0f}MB")
         return

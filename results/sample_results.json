@@ -95,6 +95,28 @@
       }
     },
     {
+      "model_name": "ORB-v3-Direct",
+      "model_key": "orb_ase",
+      "benchmark_method": "ase",
+      "device": "cuda",
+      "gpu_name": "NVIDIA A100-SXM4-40GB",
+      "sizes": {
+        "27": {"actual_atoms": 27, "single": {"time_per_step_ms": 13.6, "atoms_per_second": 1985}, "peak_memory_mb": 182.0},
+        "64": {"actual_atoms": 64, "single": {"time_per_step_ms": 14.4, "atoms_per_second": 4430}, "peak_memory_mb": 180.0}
+      }
+    },
+    {
+      "model_name": "AllScAIP-MD-Conserving",
+      "model_key": "allscaip_ase",
+      "benchmark_method": "ase",
+      "device": "cuda",
+      "gpu_name": "NVIDIA A100-SXM4-40GB",
+      "sizes": {
+        "27": {"actual_atoms": 27, "single": {"time_per_step_ms": 184.9, "atoms_per_second": 146}, "peak_memory_mb": 716.0},
+        "64": {"actual_atoms": 64, "single": {"time_per_step_ms": 181.6, "atoms_per_second": 352}, "peak_memory_mb": 1196.0}
+      }
+    },
+    {
       "model_name": "eSEN-SM-OC25",
       "model_key": "fairchem_esen",
       "error": "403 Client Error — gated HuggingFace repo (facebook/OC25)"
