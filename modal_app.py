@@ -240,6 +240,34 @@ def run_cuda_graph_test() -> str:
     return json.dumps(results)
 
 
+@app.function(
+    image=gpu_image,
+    gpu="A100",
+    volumes={"/results": results_vol},
+    secrets=[modal.Secret.from_name("hf-token")],
+    timeout=7200,
+    memory=32768,
+)
+def run_orb_ase_benchmark() -> str:
+    """Benchmark ORB-v3-Direct via ASE calculator on A100."""
+    import json
+    import logging
+    import sys
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        stream=sys.stdout,
+    )
+
+    sys.path.insert(0, "/root")
+    from benchmark.bench_orb_ase import run_orb_ase_benchmark
+
+    results = run_orb_ase_benchmark(output_path="/results/orb_ase_results.json")
+    results_vol.commit()
+    return json.dumps(results)
+
+
 @app.local_entrypoint()
 def main(
     n_steps: int = 100,
@@ -256,6 +284,14 @@ def main(
         results_json = run_eqv3_benchmark.remote()
         results = json.loads(results_json)
         print(f"\nEquiformerV3+DeNS-OAM — {results.get('metadata', {}).get('gpu_name', 'unknown')}")
+        for sz, info in results.get("sizes", {}).items():
+            print(f"  {sz} atoms: {info['single']['time_per_step_ms']:.1f}ms/step, {info['single']['atoms_per_second']} atoms/s, {info['peak_memory_mb']:.0f}MB")
+        return
+
+    if model == "orb_ase":
+        results_json = run_orb_ase_benchmark.remote()
+        results = json.loads(results_json)
+        print(f"\nORB-v3-Direct (ASE) — {results.get('metadata', {}).get('gpu_name', 'unknown')}")
         for sz, info in results.get("sizes", {}).items():
             print(f"  {sz} atoms: {info['single']['time_per_step_ms']:.1f}ms/step, {info['single']['atoms_per_second']} atoms/s, {info['peak_memory_mb']:.0f}MB")
         return
