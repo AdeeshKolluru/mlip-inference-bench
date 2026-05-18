@@ -20,6 +20,12 @@ class ModelSpec:
 MODELS: list[ModelSpec] = [
     # --- Leaderboard models (XL variants) ---
     ModelSpec(
+        name="EquiformerV3+DeNS-OAM",
+        torchsim_key="eqv3",
+        description="EquiformerV3+DeNS, OAM checkpoint (rank 1 on matbench-discovery)",
+        matbench_cps=0.902,
+    ),
+    ModelSpec(
         name="NequIP-OAM-XL",
         torchsim_key="nequip_xl",
         description="NequIP OAM-XL, matbench-discovery leaderboard entry",

@@ -84,17 +84,27 @@ Throughput benchmarks for top machine-learning interatomic potentials (MLIPs) fr
       <td><img src="https://img.shields.io/badge/-%E2%96%8F-ef4444" alt="2%"></td>
       <td align="right">34.5 GB</td>
     </tr>
+    <tr>
+      <td>🔶 <strong>EquiformerV3+DeNS-OAM</strong> <sup>ASE</sup></td>
+      <td align="right">0.902</td>
+      <td align="right">207.0</td>
+      <td align="right">—</td>
+      <td align="right">309</td>
+      <td><img src="https://img.shields.io/badge/-%E2%96%8F-e11d48" alt="1%"></td>
+      <td align="right">8.2 GB</td>
+    </tr>
   </tbody>
 </table>
 
-Sorted by batched throughput (highest first). CPS from [matbench-discovery](https://matbench-discovery.materialsproject.org/) where the exact checkpoint is on the leaderboard. ORB-v3 CPS is for conservative-inf-mpa.
+Sorted by batched throughput (highest first). CPS from [matbench-discovery](https://matbench-discovery.materialsproject.org/) where the exact checkpoint is on the leaderboard. ORB-v3 CPS is for conservative-inf-mpa. <sup>ASE</sup> = benchmarked via ASE calculator (single-system only, no batching).
 
 ### Key findings
 
 - **ORB-v3-Direct is the fastest leaderboard model** — 24k atoms/s batched, 2x faster than Conservative and 31x faster than PET-OAM-XL
 - **NequIP-OAM-S is the fastest small model** — 34k atoms/s with near-perfect batch parallelism (29.9 ms batched vs 29.3 ms single)
 - **XL models are memory-bound** — NequIP-OAM-XL and PET-OAM-XL use 30-35 GB, nearly saturating the A100 40GB. Batching barely helps
-- **Accuracy vs speed tradeoff** — PET-OAM-XL has the highest benchmarked CPS (0.898) but is 31x slower than ORB-v3-Direct
+- **EquiformerV3 tops CPS (0.902)** — highest accuracy but slowest at 207 ms/step (ASE, single-system). 5x slower than ORB-v3-Conservative
+- **Accuracy vs speed tradeoff** — PET-OAM-XL (CPS 0.898) is 31x slower than ORB-v3-Direct
 
 ## Models
 
@@ -105,10 +115,11 @@ Sorted by batched throughput (highest first). CPS from [matbench-discovery](http
 | **ORB-v3-Conservative** | Graph network (conservative) | Orbital Materials | `orb` |
 | **ORB-v3-Direct** | Graph network (direct) | Orbital Materials | `orb` |
 | **UMA-S-1p1** | Universal Model for Atoms | FAIR (Meta) | `fairchem` |
+| **EquiformerV3+DeNS-OAM** | Equivariant transformer | Atomic Architects | ASE (`OCPCalculator`) |
 
 ## Methodology
 
-Each model runs forward passes on a 64-atom FCC copper supercell using [TorchSim](https://github.com/TorchSim/torch-sim)'s batched API on A100 GPUs via [Modal](https://modal.com). 10 warmup steps are excluded, then 100 steps are timed with `torch.cuda.synchronize()` before and after. Batch size is 16 independent copies of the same system.
+Each model runs forward passes on a 64-atom FCC copper supercell on A100 GPUs via [Modal](https://modal.com). Most models use [TorchSim](https://github.com/TorchSim/torch-sim)'s batched API (batch size 16). EquiformerV3 uses ASE's `OCPCalculator` from the [atomicarchitects/equiformer_v3](https://github.com/atomicarchitects/equiformer_v3) fairchem fork (single-system only). 10 warmup steps are excluded, then 100 steps are timed with `torch.cuda.synchronize()`. Positions are perturbed each step to prevent calculator caching.
 
 ## Setup
 

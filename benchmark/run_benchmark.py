@@ -23,7 +23,56 @@ def _build_fcc_system(n_atoms: int, element: str = "Cu", a: float = 3.615):
 
 def _load_model(model_key: str, device: torch.device):
     """Load a TorchSim model wrapper by key."""
-    if model_key == "fairchem_esen":
+    if model_key == "eqv3":
+        import tempfile
+        import urllib.request
+
+        from fairchem.core.common.relaxation.ase_utils import OCPCalculator
+        from torch_sim.models.interface import ModelInterface
+
+        # Download EquiformerV3+DeNS-OAM checkpoint from HuggingFace
+        ckpt_url = "https://huggingface.co/mirror-physics/equiformer_v3/resolve/main/checkpoint/omat24-mptrj-salex_gradient.pt"
+        tmp = tempfile.mkdtemp()
+        ckpt_path = f"{tmp}/eqv3-oam.pt"
+
+        logger.info("  Downloading EquiformerV3+DeNS-OAM checkpoint...")
+        urllib.request.urlretrieve(ckpt_url, ckpt_path)
+
+        # Load via OCPCalculator (the standard inference API in this fairchem fork)
+        calc = OCPCalculator(checkpoint_path=ckpt_path, cpu=device.type == "cpu")
+
+        # Wrap ASE calculator as a TorchSim ModelInterface
+        class _EqV3Wrapper(ModelInterface):
+            def __init__(self, calc, device):
+                super().__init__()
+                self._calc = calc
+                self._device = device
+                self._dtype = torch.float32
+                self._compute_stress = False
+                self._compute_forces = True
+
+            def forward(self, state, **kwargs):
+                from torch_sim.io import state_to_atoms
+
+                atoms_list = state_to_atoms(state)
+                energies = []
+                all_forces = []
+                for atoms in atoms_list:
+                    atoms.calc = self._calc
+                    energies.append(atoms.get_potential_energy())
+                    all_forces.append(atoms.get_forces())
+
+                import numpy as np
+                energy = torch.tensor(energies, device=self._device, dtype=self._dtype)
+                forces = torch.tensor(
+                    np.concatenate(all_forces, axis=0),
+                    device=self._device, dtype=self._dtype,
+                )
+                return {"energy": energy, "forces": forces}
+
+        return _EqV3Wrapper(calc, device)
+
+    elif model_key == "fairchem_esen":
         from torch_sim.models.fairchem import FairChemModel
 
         # Use OC25-trained eSEN (not gated, unlike OMol25 models)

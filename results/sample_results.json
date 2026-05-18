@@ -84,6 +84,17 @@
       }
     },
     {
+      "model_name": "EquiformerV3+DeNS-OAM",
+      "model_key": "eqv3",
+      "matbench_cps": 0.902,
+      "benchmark_method": "ase",
+      "device": "cuda",
+      "gpu_name": "NVIDIA A100-SXM4-40GB",
+      "sizes": {
+        "64": {"actual_atoms": 64, "single": {"time_per_step_ms": 207.0, "atoms_per_second": 309}, "peak_memory_mb": 8200.0}
+      }
+    },
+    {
       "model_name": "eSEN-SM-OC25",
       "model_key": "fairchem_esen",
       "error": "403 Client Error — gated HuggingFace repo (facebook/OC25)"
