@@ -84,17 +84,46 @@ Throughput benchmarks for top machine-learning interatomic potentials (MLIPs) fr
       <td><img src="https://img.shields.io/badge/-%E2%96%8F-ef4444" alt="2%"></td>
       <td align="right">34.5 GB</td>
     </tr>
+    <tr>
+      <td>🔵 <strong>ORB-v3-Direct</strong> <sup>ASE</sup></td>
+      <td align="right">—</td>
+      <td align="right">14.4</td>
+      <td align="right">—</td>
+      <td align="right">4,430</td>
+      <td><img src="https://img.shields.io/badge/-%E2%96%88%E2%96%88%E2%96%88-06b6d4" alt="13%"></td>
+      <td align="right">180 MB</td>
+    </tr>
+    <tr>
+      <td>🟠 <strong>AllScAIP-MD-Conserving</strong> <sup>ASE</sup></td>
+      <td align="right">—</td>
+      <td align="right">181.6</td>
+      <td align="right">—</td>
+      <td align="right">352</td>
+      <td><img src="https://img.shields.io/badge/-%E2%96%8F-d97706" alt="1%"></td>
+      <td align="right">1.2 GB</td>
+    </tr>
+    <tr>
+      <td>🔶 <strong>EquiformerV3+DeNS-OAM</strong> <sup>ASE</sup></td>
+      <td align="right">0.902</td>
+      <td align="right">207.0</td>
+      <td align="right">—</td>
+      <td align="right">309</td>
+      <td><img src="https://img.shields.io/badge/-%E2%96%8F-e11d48" alt="1%"></td>
+      <td align="right">8.2 GB</td>
+    </tr>
   </tbody>
 </table>
 
-Sorted by batched throughput (highest first). CPS from [matbench-discovery](https://matbench-discovery.materialsproject.org/) where the exact checkpoint is on the leaderboard. ORB-v3 CPS is for conservative-inf-mpa.
+Sorted by batched throughput (highest first). CPS from [matbench-discovery](https://matbench-discovery.materialsproject.org/) where the exact checkpoint is on the leaderboard. ORB-v3 CPS is for conservative-inf-mpa. <sup>ASE</sup> = benchmarked via ASE calculator (single-system only, no batching).
 
 ### Key findings
 
 - **ORB-v3-Direct is the fastest leaderboard model** — 24k atoms/s batched, 2x faster than Conservative and 31x faster than PET-OAM-XL
 - **NequIP-OAM-S is the fastest small model** — 34k atoms/s with near-perfect batch parallelism (29.9 ms batched vs 29.3 ms single)
 - **XL models are memory-bound** — NequIP-OAM-XL and PET-OAM-XL use 30-35 GB, nearly saturating the A100 40GB. Batching barely helps
-- **Accuracy vs speed tradeoff** — PET-OAM-XL has the highest benchmarked CPS (0.898) but is 31x slower than ORB-v3-Direct
+- **ORB-v3-Direct is fast in both frameworks** — 14.4 ms/step via ASE vs 16.8 ms via TorchSim. 14x faster than EquiformerV3 in apples-to-apples ASE comparison
+- **EquiformerV3 tops CPS (0.902)** — highest accuracy but slowest at 207 ms/step (ASE, single-system)
+- **AllScAIP comparable to EquiformerV3 in latency** — 181.6 ms/step via ASE with much lower memory (1.2 GB vs 8.2 GB)
 
 ## Models
 
@@ -105,10 +134,12 @@ Sorted by batched throughput (highest first). CPS from [matbench-discovery](http
 | **ORB-v3-Conservative** | Graph network (conservative) | Orbital Materials | `orb` |
 | **ORB-v3-Direct** | Graph network (direct) | Orbital Materials | `orb` |
 | **UMA-S-1p1** | Universal Model for Atoms | FAIR (Meta) | `fairchem` |
+| **EquiformerV3+DeNS-OAM** | Equivariant transformer | Atomic Architects | ASE (`OCPCalculator`) |
+| **AllScAIP-MD-Conserving** | eSCN-based | FAIR (Meta) | ASE (`FAIRChemCalculator`) |
 
 ## Methodology
 
-Each model runs forward passes on a 64-atom FCC copper supercell using [TorchSim](https://github.com/TorchSim/torch-sim)'s batched API on A100 GPUs via [Modal](https://modal.com). 10 warmup steps are excluded, then 100 steps are timed with `torch.cuda.synchronize()` before and after. Batch size is 16 independent copies of the same system.
+Each model runs forward passes on a 64-atom FCC copper supercell on A100 GPUs via [Modal](https://modal.com). Most models use [TorchSim](https://github.com/TorchSim/torch-sim)'s batched API (batch size 16). Models marked <sup>ASE</sup> use ASE calculators for single-system inference: EquiformerV3 via `OCPCalculator`, ORB-v3-Direct via `ORBCalculator`, AllScAIP via `FAIRChemCalculator`. 10 warmup steps are excluded, then 100 steps are timed with `torch.cuda.synchronize()`. Positions are perturbed each step to prevent calculator caching.
 
 ## Setup
 
